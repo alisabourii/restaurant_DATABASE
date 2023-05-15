@@ -12,7 +12,7 @@ namespace Hesaplar_VT
 {
     public partial class Form1 : Form
     {
-        MySqlConnection tunel = new MySqlConnection("Server=localhost; Database=simindokht_ctg; Uid=root; Pwd=ali1234");
+        MySqlConnection tunel = new MySqlConnection("Server=localhost; Database=resturant_database; Uid=root; Pwd=ali1234");
         public Form1()
         {
             InitializeComponent();
@@ -23,11 +23,11 @@ namespace Hesaplar_VT
             if (radioButton1.Checked)
                 gonderci = "*";
             else if (radioButton2.Checked)
-                gonderci = "tarih, Harc";
+                gonderci = "ID,tarih, Harc";
             else if (radioButton3.Checked)
-                gonderci = "tarih, Satin";
+                gonderci = "ID,tarih, Satin";
             else if (radioButton4.Checked)
-                gonderci = "tarih, Kazanc";
+                gonderci = "ID,tarih, Kazanc";
             goster(gonderci);
         }
         private void goster(string gst)
@@ -49,21 +49,64 @@ namespace Hesaplar_VT
 
         private void button2_Click(object sender, EventArgs e)
         {
-            tunel.Open();
-            int kazanc =   int.Parse(textBox3.Text) - int.Parse(textBox2.Text);
-            MySqlCommand cmd = new MySqlCommand("INSERT INTO hesaplar(Tarih, Harc,Satin,Kazanc) VALUES('"+textBox1.Text+"','"+textBox2.Text+"','"+textBox3.Text+"','"+kazanc+"')", tunel);
-            cmd.ExecuteNonQuery();
-            listele("Temel");
-            tunel.Close();
+            try
+            {
+                tunel.Open();
+                int id = int.Parse(textBox8.Text);
+                string tarih = (textBox1.Text);
+                int harc = int.Parse(textBox2.Text);
+                int satis = int.Parse(textBox3.Text);
+                int kazanc = satis - harc;
+
+                DateTime time = DateTime.Now;
+                string format = "yyyy-M-d";
+  
+
+                if (checkBox1.Checked == true)
+                    tarih = time.ToString(format);
+                MySqlCommand cmd = new MySqlCommand
+                    ("INSERT INTO hesaplar(ID,Tarih, Harc,Satin,Kazanc)" +
+                    "VALUES("+id+", '"+tarih.ToString()+"', '"+harc+"', '"+satis+"', '"+kazanc+"'); ",tunel);
+
+                cmd.ExecuteNonQuery();
+                tunel.Close();
+                listele("Temel");
+            }
+            catch(Exception hata)
+            {
+                MessageBox.Show(hata.Message);
+            }
             
         }
         private void listele(params string[] prm)
         {
             string sql = "";
             if (prm[0] == "Temel")
-                sql = "select * from ogrenciler";
-            
-            
+                sql = "select * from hesaplar";
+            if(prm[0] == "Hafta")
+            {
+                string suan = "";
+                DateTime time = DateTime.Now;
+                string format = "yyyy-M-d'"+(-7)+"'";
+                suan = time.ToString(format);
+
+                string limit = "";
+                DateTime time2 = DateTime.Now;
+                string format2 = "yyyy-M-d'" + (-14) + "'";
+                suan = time.ToString(format);
+
+                MessageBox.Show(limit.ToString());
+                sql = "select * from hesaplar where Tarih BETWEEN'"+ limit + "' and '"+suan+"'";
+            }
+            if (prm[0] == "Ay")
+            {
+                string suan = "";
+                DateTime time = DateTime.Now;
+                string format = "yyyy-'"+(-1)+"'-d";
+                suan = time.ToString(format);
+                MessageBox.Show(suan.ToString());
+                sql = "select * from hesaplar where tarih < '" + suan + "'";
+            }
             try
             {
                 tunel.Open();
@@ -90,16 +133,35 @@ namespace Hesaplar_VT
             try
             {
                 tunel.Open();
-                string sql = "UPDATE hesaplar SET Harc='"+textBox5.Text+"', Satin='"+textBox4.Text+"' where Tarih='"+textBox6+"'";
+                int kazanc = int.Parse(textBox4.Text) - int.Parse(textBox5.Text); 
+                //string sql = "UPDATE hesaplar SET Harc='"+textBox5.Text+"', Satin='"+textBox4.Text+"' where ID='"+textBox6+"'";
+                string sql = "UPDATE hesaplar SET Harc='"+textBox5.Text+"', Satin='"+textBox4.Text+"', Kazanc='"+kazanc+"' where ID = '"+textBox6.Text+"'";
                 MySqlDataAdapter adp = new MySqlDataAdapter(sql, tunel);
                 DataTable dt = new DataTable();
                 adp.Fill(dt);
                 dataGridView1.DataSource = dt;
                 tunel.Close();
+                listele("Temel");
             }
             catch (Exception hata)
             {
                 MessageBox.Show(hata.Message);
+            }
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            if (radioButton7.Checked)
+            {
+                listele("Hafta");
+            }
+            else if (radioButton6.Checked)
+            {
+                listele("Ay");
+            }
+            else if (radioButton5.Checked)
+            {
+                listele("Yil");
             }
         }
     }
